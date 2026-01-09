@@ -6,10 +6,10 @@
 
 Live TV PVR client addon for Kodi to use with your own Xtream Codes server.
 
-This add-on focuses on fast channel import, responsive UI with large lists, and simple configuration.
+This addon focuses on fast channel import, responsive UI with large lists, and simple configuration.
 
 
-_**This add-on does not provide any streams, playlists, credentials, or content. You must supply valid access to your own provider.**_
+_**This addon does not provide any streams, playlists, credentials, or content. You must supply valid access to your own provider.**_
 
 ## Features
 - Live TV channels: imports Xtream Codes live streams as Kodi TV channels.
@@ -23,7 +23,7 @@ Not supported (roadmap or out of scope for now):
 - EPG/guide data (not implemented; planned)
 
 ## Configuration
-Open the add-on’s settings in Kodi. The following settings are available:
+Open the addon’s settings in Kodi. The following settings are available:
 
 - Connection
   - Server: Provider hostname or URL (with or without scheme). Examples: `example.com`, `https://example.com`
@@ -51,13 +51,13 @@ Open the add-on’s settings in Kodi. The following settings are available:
   - Exposed in the UI but not implemented yet; these settings currently have no effect
 
 Notes:
-- HLS playback: many providers work out of the box; some may require Kodi’s "InputStream Adaptive" add-on to be installed and enabled.
-- Large lists: the add-on prioritizes responsiveness with very large channel lists; channel icons may be limited automatically for performance.
+- HLS playback: many providers work out of the box; some may require Kodi’s "InputStream Adaptive" addon to be installed and enabled.
+- Large lists: the addon prioritizes responsiveness with very large channel lists; channel icons may be limited automatically for performance.
 
 ## Usage
-- After configuration, the add-on loads channels in the background; Kodi displays a notification like "Loading channels...".
+- After configuration, the addon loads channels in the background; Kodi displays a notification like "Loading channels...".
 - On success, you’ll see your channels under TV and your provider’s categories as channel groups.
-- The add-on writes a small cache to speed up cold starts; subsequent starts use the cache and then refresh in the background.
+- The addon writes a small cache to speed up cold starts; subsequent starts use the cache and then refresh in the background.
 
 ## Troubleshooting
 - Verify credentials and server URL (include the correct scheme and port if needed). Example base URL resolution:
@@ -98,8 +98,8 @@ Local builds: the helper script targets macOS only for development convenience. 
 Prerequisites:
 - CMake (3.18+ recommended)
 - Xcode or Command Line Tools (C++17)
-- Kodi installed (to run the add-on)
-- The Kodi add-on dev kit (kodi-addon-dev-kit); set `KODI_ADDON_SDK` to its path
+- Kodi installed (to run the addon)
+- The Kodi addon dev kit (kodi-addon-dev-kit); set `KODI_ADDON_SDK` to its path
 
 Build using the helper script:
 
@@ -112,9 +112,9 @@ ARCH=arm64   KODI_ADDON_SDK=/path/to/kodi-addon-dev-kit ./build.sh
 ARCH=x86_64  KODI_ADDON_SDK=/path/to/kodi-addon-dev-kit ./build.sh
 ```
 
-The build script writes the packaged add-on to `dist/pvr.xtreamcodes`.
+The build script writes the packaged addon to `dist/pvr.xtreamcodes`.
 
-It also creates an installable Kodi ZIP in `dist/` named `pvr.xtreamcodes-<version>.zip`. In Kodi, use Add-ons → Install from zip file and select that ZIP.
+It also creates an installable Kodi ZIP in `dist/` named `pvr.xtreamcodes-<version>.zip`. In Kodi, use Addons → Install from zip file and select that ZIP.
 
 Install into Kodi’s addons folder (macOS):
 
@@ -128,7 +128,7 @@ KODI_ADDONS_DIR="/Users/<you>/Library/Application Support/Kodi/addons" ./build.s
 ./build.sh --install-kodi --kodi-addons-dir "/path/to/Kodi/addons"
 ```
 
-If Kodi is running during install, you may need to restart Kodi to reload the add-on.
+If Kodi is running during install, you may need to restart Kodi to reload the addon.
 
 ### Releases (ZIPs)
 - Tagged pushes (`v*`) trigger a GitHub Action that builds per platform and uploads platform-specific ZIPs named `pvr.xtreamcodes-<version>-<platform>.zip`.

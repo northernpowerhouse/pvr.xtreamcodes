@@ -9,6 +9,8 @@ set(ADDON_ID "pvr.xtreamcodes")
 set(ADDON_NAME "Xtream Codes PVR Client")
 set(ADDON_VERSION "1.0.0")
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR})
+
 # Try to use Kodi's official addon build system when available.
 find_package(Kodi QUIET)
 
@@ -17,7 +19,10 @@ if(Kodi_FOUND)
   set(CMAKE_CXX_STANDARD 17)
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-  include_directories(${KODI_INCLUDE_DIR}/..)
+  find_package(pugixml REQUIRED)
+
+  include_directories(${KODI_INCLUDE_DIR}/..
+                      ${PUGIXML_INCLUDE_DIRS})
 
   set(XTC_SOURCES
     src/addon.cpp
@@ -30,7 +35,10 @@ if(Kodi_FOUND)
     ${ADDON_ID}/resources/language/resource.language.en_gb/strings.po
   )
 
-  set(DEPLIBS)
+  set(DEPLIBS ${PUGIXML_LIBRARIES})
+  
+  message(STATUS "PUGIXML_LIBRARIES: ${PUGIXML_LIBRARIES}")
+  
   build_addon(${ADDON_ID} XTC DEPLIBS)
 
   include(CPack)

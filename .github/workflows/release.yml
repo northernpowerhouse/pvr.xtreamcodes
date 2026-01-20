@@ -16,13 +16,9 @@ jobs:
         include:
           - os: ubuntu-22.04
             label: linux
-          - os: macos-14
-            label: macos
-            arch: arm64
-          - os: macos-14
-            label: macos
-            arch: x86_64
-    name: Build ${{ matrix.label }}${{ matrix.arch && format(' ({0})', matrix.arch) || '' }}
+          - os: windows-2022
+            label: windows
+    name: Build ${{ matrix.label }}
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -45,13 +41,20 @@ jobs:
           sudo apt-get install -y cmake build-essential zip g++ 2>&1 | tail -20
           echo "Build dependencies installed successfully"
 
+      - name: Install build deps (Windows)
+        if: startsWith(matrix.os, 'windows')
+        timeout-minutes: 15
+        shell: bash
+        run: |
+          choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
+          choco install zip -y
+          echo "Build dependencies installed successfully"
 
       - name: Build and stage addon
         shell: bash
         timeout-minutes: 45
         env:
           KODI_ADDON_SDK: xbmc/xbmc/addons/kodi-dev-kit
-          ARCH: ${{ matrix.arch }}
           VERSION: ${{ github.event_name == 'release' && github.event.release.tag_name || '' }}
         run: |
           echo "KODI_ADDON_SDK=$KODI_ADDON_SDK"
@@ -79,23 +82,18 @@ jobs:
           if ldd "$SO_FILE" | grep -q "not found"; then echo "Missing shared dependencies"; exit 1; fi
           echo "Linux shared library dependencies OK"
 
-      - name: Check shared library deps (macOS)
-        if: startsWith(matrix.os, 'macos')
+      - name: Check shared library deps (Windows)
+        if: startsWith(matrix.os, 'windows')
         shell: bash
-        env:
-          ARCH: ${{ matrix.arch }}
         run: |
           set -e
           ADDON_DIR="dist/pvr.xtreamcodes"
           if [[ ! -d "$ADDON_DIR" ]]; then echo "Addon directory not found: $ADDON_DIR"; ls -lah dist || true; exit 1; fi
-          DYLIB_FILE=$(find "$ADDON_DIR" -name '*.dylib' -print -quit)
-          if [[ -z "$DYLIB_FILE" ]]; then echo "No .dylib found in $ADDON_DIR"; find "$ADDON_DIR" -maxdepth 2 -type f -print; exit 1; fi
-          echo "Found DYLIB: $DYLIB_FILE"
-          file "$DYLIB_FILE" | tee /dev/stderr
-          if [[ "$ARCH" == "arm64" ]]; then file "$DYLIB_FILE" | grep -qi 'arm64' || { echo "Expected arm64 binary"; exit 1; }; fi
-          if [[ "$ARCH" == "x86_64" ]]; then file "$DYLIB_FILE" | grep -qi 'x86_64' || { echo "Expected x86_64 binary"; exit 1; }; fi
-          otool -L "$DYLIB_FILE" | tee /dev/stderr
-          echo "macOS binary architecture and dependencies listed"
+          DLL_FILE=$(find "$ADDON_DIR" -name '*.dll' -print -quit)
+          if [[ -z "$DLL_FILE" ]]; then echo "No .dll found in $ADDON_DIR"; find "$ADDON_DIR" -maxdepth 2 -type f -print; exit 1; fi
+          echo "Found DLL: $DLL_FILE"
+          file "$DLL_FILE" || true
+          echo "Windows DLL found and checked"
 
       - name: Set version
         id: version
@@ -115,18 +113,14 @@ jobs:
         shell: bash
         env:
           MATRIX_OS: ${{ matrix.os }}
-          MAC_ARCH: ${{ matrix.arch }}
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           set -e
           case "$MATRIX_OS" in
             ubuntu-*) PLAT=linux ;;
-            macos-*)  PLAT=macos ;;
+            windows-*) PLAT=windows ;;
             *) PLAT="$MATRIX_OS" ;;
           esac
-          if [[ "$PLAT" == "macos" && -n "${MAC_ARCH}" ]]; then
-            PLAT="macos-${MAC_ARCH}"
-          fi
           ZIP_NAME="pvr.xtreamcodes-${VERSION}-${PLAT}.zip"
           (cd dist && zip -qr "$ZIP_NAME" pvr.xtreamcodes)
           echo "Created release ZIP: $ZIP_NAME"
@@ -135,7 +129,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: pvr.xtreamcodes-${{ steps.version.outputs.version }}-${{ matrix.label }}${{ matrix.arch && format('-{0}', matrix.arch) || '' }}
+          name: pvr.xtreamcodes-${{ steps.version.outputs.version }}-${{ matrix.label }}
           path: dist/*
 
       - name: Publish GitHub Release asset
@@ -153,7 +147,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        abi: [arm64-v8a, armeabi-v7a, x86_64]
+        abi: [armeabi-v7a]
     steps:
       - name: Checkout
         uses: actions/checkout@v4

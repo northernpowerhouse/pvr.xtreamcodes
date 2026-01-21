@@ -664,6 +664,9 @@ public:
   {
     isPlayable = false;
     EnsureLoaded();
+    
+    kodi::Log(KODI_LOG_DEBUG, "IsEPGTagPlayable: channel=%u, start=%ld, end=%ld", 
+              tag.GetUniqueChannelId(), tag.GetStartTime(), tag.GetEndTime());
 
     std::shared_ptr<const std::vector<xtream::LiveStream>> streams;
     {
@@ -687,6 +690,9 @@ public:
     {
       if (static_cast<unsigned int>(stream.id) == channelUid)
       {
+        kodi::Log(KODI_LOG_DEBUG, "IsEPGTagPlayable: found stream %d, tvArchive=%d, duration=%d",
+                  stream.id, stream.tvArchive, stream.tvArchiveDuration);
+        
         // Check if stream has catchup/archive support
         if (stream.tvArchive && stream.tvArchiveDuration > 0)
         {
@@ -695,6 +701,7 @@ public:
           if (endTime >= archiveCutoff)
           {
             isPlayable = true;
+            kodi::Log(KODI_LOG_DEBUG, "IsEPGTagPlayable: PLAYABLE!");
           }
         }
         break;
@@ -708,6 +715,9 @@ public:
                                      std::vector<kodi::addon::PVRStreamProperty>& properties) override
   {
     EnsureLoaded();
+    
+    kodi::Log(KODI_LOG_DEBUG, "GetEPGTagStreamProperties: channel=%u, start=%ld, end=%ld",
+              tag.GetUniqueChannelId(), tag.GetStartTime(), tag.GetEndTime());
 
     std::shared_ptr<const std::vector<xtream::LiveStream>> streams;
     xtream::Settings settings;
@@ -736,6 +746,8 @@ public:
 
         // Build catchup URL
         const std::string url = xtream::BuildCatchupUrl(settings, stream.id, startTime, endTime, streamFormat);
+        kodi::Log(KODI_LOG_DEBUG, "GetEPGTagStreamProperties: catchup URL = %s", url.c_str());
+        
         if (url.empty())
           return PVR_ERROR_UNKNOWN;
 

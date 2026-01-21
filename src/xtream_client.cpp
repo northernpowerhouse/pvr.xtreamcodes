@@ -974,13 +974,16 @@ std::string BuildCatchupUrl(const Settings& settings, int streamId, time_t start
   if (base.empty() || streamId <= 0 || startTime <= 0 || endTime <= startTime)
     return {};
 
+  // Apply catchup start offset
+  time_t adjustedStartTime = startTime + settings.catchupStartOffsetSecs;
+  
   // Calculate duration in minutes
-  const int durationMinutes = static_cast<int>((endTime - startTime) / 60);
+  const int durationMinutes = static_cast<int>((endTime - adjustedStartTime) / 60);
   if (durationMinutes <= 0)
     return {};
 
   // Format start time as YYYY-MM-DD:HH-MM
-  std::tm* tm = std::gmtime(&startTime);
+  std::tm* tm = std::gmtime(&adjustedStartTime);
   if (!tm)
     return {};
 
@@ -1210,28 +1213,44 @@ bool ParseXMLTV(const std::string& xmltvData,
     {
       // Parse XMLTV time format: 20260121120000 +0000
       struct tm tm = {};
-      if (sscanf(startAttr, "%4d%2d%2d%2d%2d%2d", 
+      int tzHours = 0, tzMins = 0;
+      char tzSign = '+';
+      if (sscanf(startAttr, "%4d%2d%2d%2d%2d%2d %c%2d%2d", 
                  &tm.tm_year, &tm.tm_mon, &tm.tm_mday,
-                 &tm.tm_hour, &tm.tm_min, &tm.tm_sec) == 6)
+                 &tm.tm_hour, &tm.tm_min, &tm.tm_sec,
+                 &tzSign, &tzHours, &tzMins) >= 6)
       {
         tm.tm_year -= 1900;
         tm.tm_mon -= 1;
-        tm.tm_isdst = -1;
-        entry.startTime = mktime(&tm);
+        tm.tm_isdst = 0;
+        // Use timegm to interpret as UTC, then adjust for timezone offset
+        entry.startTime = timegm(&tm);
+        // Apply timezone offset to convert to UTC
+        int tzOffsetSeconds = (tzHours * 3600 + tzMins * 60);
+        if (tzSign == '-')
+          tzOffsetSeconds = -tzOffsetSeconds;
+        entry.startTime -= tzOffsetSeconds;
       }
     }
     
     if (stopAttr && stopAttr[0] != '\0')
     {
       struct tm tm = {};
-      if (sscanf(stopAttr, "%4d%2d%2d%2d%2d%2d", 
+      int tzHours = 0, tzMins = 0;
+      char tzSign = '+';
+      if (sscanf(stopAttr, "%4d%2d%2d%2d%2d%2d %c%2d%2d", 
                  &tm.tm_year, &tm.tm_mon, &tm.tm_mday,
-                 &tm.tm_hour, &tm.tm_min, &tm.tm_sec) == 6)
+                 &tm.tm_hour, &tm.tm_min, &tm.tm_sec,
+                 &tzSign, &tzHours, &tzMins) >= 6)
       {
         tm.tm_year -= 1900;
         tm.tm_mon -= 1;
-        tm.tm_isdst = -1;
-        entry.endTime = mktime(&tm);
+        tm.tm_isdst = 0;
+        entry.endTime = timegm(&tm);
+        int tzOffsetSeconds = (tzHours * 3600 + tzMins * 60);
+        if (tzSign == '-')
+          tzOffsetSeconds = -tzOffsetSeconds;
+        entry.endTime -= tzOffsetSeconds;
       }
     }
 

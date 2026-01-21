@@ -100,3 +100,11 @@ msgstr "Enable user agent spoofing"
 msgctxt "#30402"
 msgid "Custom user agent"
 msgstr "Custom user agent"
+
+msgctxt "#30403"
+msgid "Catchup start time offset (seconds)"
+msgstr "Catchup start time offset (seconds)"
+
+msgctxt "#30404"
+msgid "{0:d} seconds"
+msgstr "{0:d} seconds"

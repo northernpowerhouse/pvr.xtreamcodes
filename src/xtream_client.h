@@ -17,6 +17,8 @@ struct Settings
 
   bool enableUserAgentSpoofing = false;
   std::string customUserAgent;
+  
+  int catchupStartOffsetSecs = 0;
 };
 
 struct TestResult

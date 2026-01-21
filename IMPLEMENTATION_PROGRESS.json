@@ -247,6 +247,13 @@
           "status": "completed",
           "files": ["src/addon.cpp"],
           "notes": "Sets STREAMURL, ISREALTIMESTREAM=true, EPGPLAYBACKASLIVE=true for timeshift-style playback"
+        },
+        {
+          "id": "playback-7",
+          "description": "Enable playing ongoing/live programs from the beginning using catchup",
+          "status": "not-started",
+          "files": ["src/addon.cpp"],
+          "notes": "Allow users to play currently broadcasting programs from the start using catchup mechanism"
         }
       ]
     },

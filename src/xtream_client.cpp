@@ -930,6 +930,11 @@ bool ParseXMLTV(const std::string& xmltvData,
 
   // First pass: Parse channel elements and match to our streams
   std::unordered_map<std::string, ChannelEpg> epgMap;
+  std::unordered_map<std::string, std::string> xmltvIdToMappedId;
+  int totalXmltvChannels = 0;
+  int mappedByNumericId = 0;
+  int mappedByName = 0;
+  int unmapped = 0;
   
   for (const auto& channelNode : tvNode.children("channel"))
   {
@@ -939,6 +944,7 @@ bool ParseXMLTV(const std::string& xmltvData,
 
     ChannelEpg epg;
     const std::string xmltvId = idAttr;
+    totalXmltvChannels++;
     
     // Get display name
     const auto& displayNameNode = channelNode.child("display-name");
@@ -967,6 +973,7 @@ bool ParseXMLTV(const std::string& xmltvData,
       {
         mappedId = std::to_string(streamId);
         matched = true;
+        mappedByNumericId++;
       }
     }
 
@@ -974,12 +981,24 @@ bool ParseXMLTV(const std::string& xmltvData,
     {
       const auto nameIt = streamNameToId.find(ToLower(epg.displayName));
       if (nameIt != streamNameToId.end())
+      {
         mappedId = std::to_string(nameIt->second);
+        matched = true;
+        mappedByName++;
+      }
     }
+
+    if (!matched)
+      unmapped++;
 
     epg.id = mappedId;
     epgMap[epg.id] = epg;
+    xmltvIdToMappedId[xmltvId] = mappedId;
   }
+
+  kodi::Log(ADDON_LOG_INFO,
+            "pvr.xtreamcodes: XMLTV channel mapping: total=%d, numeric=%d, name=%d, unmapped=%d",
+            totalXmltvChannels, mappedByNumericId, mappedByName, unmapped);
 
   // Second pass: Parse programme elements
   int programmeCount = 0;
@@ -990,7 +1009,10 @@ bool ParseXMLTV(const std::string& xmltvData,
     if (!channelAttr || channelAttr[0] == '\0')
       continue;
 
-    const std::string channelId = channelAttr;
+    std::string channelId = channelAttr;
+    const auto mapIt = xmltvIdToMappedId.find(channelId);
+    if (mapIt != xmltvIdToMappedId.end())
+      channelId = mapIt->second;
     
     // Check if we have this channel in our EPG map
     auto epgIt = epgMap.find(channelId);

@@ -895,7 +895,12 @@ bool ParseXMLTV(const std::string& xmltvData,
 
   // Parse XML
   pugi::xml_document doc;
-  pugi::xml_parse_result result = doc.load_string(xmltvData.c_str());
+  std::vector<char> xmlBuffer(xmltvData.begin(), xmltvData.end());
+  xmlBuffer.push_back('\0');
+  pugi::xml_parse_result result = doc.load_buffer_inplace(
+      xmlBuffer.data(),
+      xmlBuffer.size() - 1,
+      pugi::parse_default | pugi::parse_declaration);
   
   if (!result)
   {

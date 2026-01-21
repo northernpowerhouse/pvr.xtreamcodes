@@ -938,7 +938,7 @@ bool ParseXMLTV(const std::string& xmltvData,
       continue;
 
     ChannelEpg epg;
-    epg.id = idAttr;
+    const std::string xmltvId = idAttr;
     
     // Get display name
     const auto& displayNameNode = channelNode.child("display-name");
@@ -954,6 +954,30 @@ bool ParseXMLTV(const std::string& xmltvData,
         epg.iconPath = srcAttr;
     }
 
+    // Map XMLTV channel ID or display-name to stream ID for Kodi EPG lookup
+    std::string mappedId = xmltvId;
+    bool matched = false;
+
+    char* end = nullptr;
+    const long numericId = std::strtol(xmltvId.c_str(), &end, 10);
+    if (end && *end == '\0' && numericId > 0)
+    {
+      const int streamId = static_cast<int>(numericId);
+      if (streamIdToName.find(streamId) != streamIdToName.end())
+      {
+        mappedId = std::to_string(streamId);
+        matched = true;
+      }
+    }
+
+    if (!matched && !epg.displayName.empty())
+    {
+      const auto nameIt = streamNameToId.find(ToLower(epg.displayName));
+      if (nameIt != streamNameToId.end())
+        mappedId = std::to_string(nameIt->second);
+    }
+
+    epg.id = mappedId;
     epgMap[epg.id] = epg;
   }
 

@@ -982,8 +982,9 @@ std::string BuildCatchupUrl(const Settings& settings, int streamId, time_t start
   if (durationMinutes <= 0)
     return {};
 
-  // Format start time as YYYY-MM-DD:HH-MM
-  std::tm* tm = std::gmtime(&adjustedStartTime);
+  // Format start time as YYYY-MM-DD:HH-MM (use gmtime_r for thread safety)
+  std::tm tmBuf = {};
+  std::tm* tm = gmtime_r(&adjustedStartTime, &tmBuf);
   if (!tm)
     return {};
 
@@ -1223,9 +1224,12 @@ bool ParseXMLTV(const std::string& xmltvData,
         tm.tm_year -= 1900;
         tm.tm_mon -= 1;
         tm.tm_isdst = 0;
-        // Use timegm to interpret as UTC, then adjust for timezone offset
+        // timegm interprets the parsed time as UTC
+        // But the parsed time is actually in the specified timezone (e.g., +0100)
+        // To get the actual UTC time: we need to subtract the offset
+        // Example: "20:00 +0100" means 20:00 in UTC+1 = 19:00 in UTC
+        // timegm gives us 20:00 UTC, so we subtract 1 hour to get 19:00 UTC
         entry.startTime = timegm(&tm);
-        // Apply timezone offset to convert to UTC
         int tzOffsetSeconds = (tzHours * 3600 + tzMins * 60);
         if (tzSign == '-')
           tzOffsetSeconds = -tzOffsetSeconds;

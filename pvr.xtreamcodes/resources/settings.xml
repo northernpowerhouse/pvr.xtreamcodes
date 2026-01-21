@@ -128,11 +128,6 @@
           <constraints>
             <allowempty>true</allowempty>
           </constraints>
-          <dependencies>
-            <dependency type="visible">
-              <condition operator="isnot" setting="category_filter_mode">all</condition>
-            </dependency>
-          </dependencies>
           <control type="edit" format="string" delayed="false">
             <heading>30206</heading>
           </control>

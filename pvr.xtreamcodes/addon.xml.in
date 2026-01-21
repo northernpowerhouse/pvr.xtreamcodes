@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <addon id="@ADDON_ID@" version="@ADDON_VERSION@" name="@ADDON_NAME@" provider-name="Denunciadeiro">
   <requires>
-    <import addon="kodi.binary.instance.pvr" version="8.3.0"/>
+    <import addon="kodi.binary.instance.pvr" version="8.2.0"/>
   </requires>
 
   <extension

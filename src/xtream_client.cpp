@@ -982,9 +982,14 @@ std::string BuildCatchupUrl(const Settings& settings, int streamId, time_t start
   if (durationMinutes <= 0)
     return {};
 
+  // IMPORTANT: The Xtream server expects times in the XMLTV timezone, NOT UTC
+  // XMLTV times are in CET (UTC+1), so we need to add 1 hour to the UTC timestamp
+  // TODO: Parse and store the actual XMLTV timezone offset instead of hardcoding +1
+  time_t localAdjustedTime = adjustedStartTime + 3600; // Add 1 hour for CET timezone
+  
   // Format start time as YYYY-MM-DD:HH-MM (use gmtime_r for thread safety)
   std::tm tmBuf = {};
-  std::tm* tm = gmtime_r(&adjustedStartTime, &tmBuf);
+  std::tm* tm = gmtime_r(&localAdjustedTime, &tmBuf);
   if (!tm)
     return {};
 

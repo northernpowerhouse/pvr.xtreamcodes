@@ -561,14 +561,33 @@ public:
     std::shared_ptr<const UidToStreamMap> uidToStream;
     xtream::Settings settings;
     std::string streamFormat;
+    std::string pendingCatchupUrl;
     {
       std::lock_guard<std::mutex> lock(m_mutex);
       uidToStream = m_uidToStreamId;
       settings = m_xtreamSettings;
       streamFormat = m_streamFormat;
+      // Check if there's a pending catchup URL for this channel
+      if (m_pendingCatchupChannelUid == channel.GetUniqueId() && !m_pendingCatchupUrl.empty())
+      {
+        pendingCatchupUrl = m_pendingCatchupUrl;
+        // Clear the pending state after consuming
+        m_pendingCatchupUrl.clear();
+        m_pendingCatchupChannelUid = 0;
+      }
     }
     if (!uidToStream)
       return PVR_ERROR_UNKNOWN;
+
+    // If we have a pending catchup URL from GetEPGTagStreamProperties, use it
+    if (!pendingCatchupUrl.empty())
+    {
+      kodi::Log(ADDON_LOG_INFO, "GetChannelStreamProperties: using CATCHUP URL = %s", pendingCatchupUrl.c_str());
+      properties.emplace_back(PVR_STREAM_PROPERTY_STREAMURL, pendingCatchupUrl);
+      properties.emplace_back(PVR_STREAM_PROPERTY_ISREALTIMESTREAM, "true");
+      properties.emplace_back(PVR_STREAM_PROPERTY_EPGPLAYBACKASLIVE, "true");
+      return PVR_ERROR_NO_ERROR;
+    }
 
     const unsigned int uid = channel.GetUniqueId();
     auto it = uidToStream->find(uid);
@@ -580,6 +599,7 @@ public:
     if (url.empty())
       return PVR_ERROR_UNKNOWN;
 
+    kodi::Log(ADDON_LOG_DEBUG, "GetChannelStreamProperties: using LIVE URL = %s", url.c_str());
     properties.emplace_back(PVR_STREAM_PROPERTY_STREAMURL, url);
     properties.emplace_back(PVR_STREAM_PROPERTY_ISREALTIMESTREAM, "true");
     return PVR_ERROR_NO_ERROR;
@@ -754,6 +774,15 @@ public:
           return PVR_ERROR_UNKNOWN;
         }
 
+        // Store the catchup URL for GetChannelStreamProperties to use
+        // Kodi will call GetChannelStreamProperties after this, and we need to provide the catchup URL there
+        {
+          std::lock_guard<std::mutex> lock(m_mutex);
+          m_pendingCatchupUrl = url;
+          m_pendingCatchupChannelUid = channelUid;
+        }
+        kodi::Log(ADDON_LOG_INFO, "GetEPGTagStreamProperties: stored catchup URL for channel %u", channelUid);
+        
         properties.emplace_back(PVR_STREAM_PROPERTY_STREAMURL, url);
         kodi::Log(ADDON_LOG_INFO, "GetEPGTagStreamProperties: added STREAMURL property");
         properties.emplace_back(PVR_STREAM_PROPERTY_ISREALTIMESTREAM, "true");
@@ -1603,6 +1632,10 @@ private:
   std::shared_ptr<const GroupMembersMap> m_groupMembers;
   std::shared_ptr<const std::vector<xtream::ChannelEpg>> m_epgData;
   std::shared_ptr<const std::vector<xtream::LiveStream>> m_streams;
+
+  // Catchup playback state - set by GetEPGTagStreamProperties, consumed by GetChannelStreamProperties
+  std::string m_pendingCatchupUrl;
+  unsigned int m_pendingCatchupChannelUid = 0;
 
   std::string m_cacheSignatureAttempted;
 

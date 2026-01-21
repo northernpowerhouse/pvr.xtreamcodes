@@ -38,6 +38,57 @@ std::string ToLower(std::string s)
   return s;
 }
 
+std::string NormalizeChannelNameForEpg(const std::string& in)
+{
+  // Trim and collapse whitespace
+  std::string s = Trim(in);
+  if (s.empty())
+    return s;
+
+  // Decode a few common HTML entities
+  auto replace_all = [](std::string& t, const char* from, const char* to) {
+    const std::string a(from);
+    const std::string b(to);
+    size_t pos = 0;
+    while ((pos = t.find(a, pos)) != std::string::npos)
+    {
+      t.replace(pos, a.size(), b);
+      pos += b.size();
+    }
+  };
+  replace_all(s, "&amp;", "&");
+  replace_all(s, "&quot;", "\"");
+  replace_all(s, "&#039;", "'");
+  replace_all(s, "&lt;", "<");
+  replace_all(s, "&gt;", ">");
+
+  std::string collapsed;
+  collapsed.reserve(s.size());
+  bool prevSpace = false;
+  for (unsigned char ch : s)
+  {
+    if (std::isspace(ch))
+    {
+      if (!prevSpace)
+        collapsed.push_back(' ');
+      prevSpace = true;
+      continue;
+    }
+    prevSpace = false;
+    collapsed.push_back(static_cast<char>(ch));
+  }
+
+  collapsed = Trim(collapsed);
+
+  // Strip category prefix like "UK | Channel" -> "Channel"
+  const std::string sep = " | ";
+  const size_t pos = collapsed.rfind(sep);
+  if (pos != std::string::npos && pos + sep.size() < collapsed.size())
+    collapsed = Trim(collapsed.substr(pos + sep.size()));
+
+  return collapsed;
+}
+
 bool IsUnreserved(unsigned char c)
 {
   if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9'))
@@ -924,7 +975,9 @@ bool ParseXMLTV(const std::string& xmltvData,
     if (stream.id > 0)
     {
       streamIdToName[stream.id] = stream.name;
-      streamNameToId[ToLower(stream.name)] = stream.id;
+      const std::string normName = NormalizeChannelNameForEpg(stream.name);
+      if (!normName.empty())
+        streamNameToId[ToLower(normName)] = stream.id;
     }
   }
 
@@ -948,8 +1001,12 @@ bool ParseXMLTV(const std::string& xmltvData,
     
     // Get display name
     const auto& displayNameNode = channelNode.child("display-name");
+    std::string displayNameNormalized;
     if (displayNameNode)
+    {
       epg.displayName = displayNameNode.child_value();
+      displayNameNormalized = NormalizeChannelNameForEpg(epg.displayName);
+    }
     
     // Get icon
     const auto& iconNode = channelNode.child("icon");
@@ -977,9 +1034,9 @@ bool ParseXMLTV(const std::string& xmltvData,
       }
     }
 
-    if (!matched && !epg.displayName.empty())
+    if (!matched && !displayNameNormalized.empty())
     {
-      const auto nameIt = streamNameToId.find(ToLower(epg.displayName));
+      const auto nameIt = streamNameToId.find(ToLower(displayNameNormalized));
       if (nameIt != streamNameToId.end())
       {
         mappedId = std::to_string(nameIt->second);

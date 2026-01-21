@@ -660,6 +660,95 @@ public:
     return PVR_ERROR_NO_ERROR;
   }
 
+  PVR_ERROR IsEPGTagPlayable(const kodi::addon::PVREPGTag& tag, bool& isPlayable) override
+  {
+    isPlayable = false;
+    EnsureLoaded();
+
+    std::shared_ptr<const std::vector<xtream::LiveStream>> streams;
+    {
+      std::lock_guard<std::mutex> lock(m_mutex);
+      streams = m_streams;
+    }
+
+    if (!streams)
+      return PVR_ERROR_NO_ERROR;
+
+    const unsigned int channelUid = tag.GetUniqueChannelId();
+    const time_t endTime = tag.GetEndTime();
+    const time_t now = std::time(nullptr);
+
+    // Only past programs can be played via catchup
+    if (endTime >= now)
+      return PVR_ERROR_NO_ERROR;
+
+    // Find the stream for this channel
+    for (const auto& stream : *streams)
+    {
+      if (static_cast<unsigned int>(stream.id) == channelUid)
+      {
+        // Check if stream has catchup/archive support
+        if (stream.tvArchive && stream.tvArchiveDuration > 0)
+        {
+          // Check if the program is within the archive window
+          const time_t archiveCutoff = now - (stream.tvArchiveDuration * 3600); // duration is in hours
+          if (endTime >= archiveCutoff)
+          {
+            isPlayable = true;
+          }
+        }
+        break;
+      }
+    }
+
+    return PVR_ERROR_NO_ERROR;
+  }
+
+  PVR_ERROR GetEPGTagStreamProperties(const kodi::addon::PVREPGTag& tag,
+                                     std::vector<kodi::addon::PVRStreamProperty>& properties) override
+  {
+    EnsureLoaded();
+
+    std::shared_ptr<const std::vector<xtream::LiveStream>> streams;
+    xtream::Settings settings;
+    std::string streamFormat;
+    {
+      std::lock_guard<std::mutex> lock(m_mutex);
+      streams = m_streams;
+      settings = m_xtreamSettings;
+      streamFormat = m_streamFormat;
+    }
+
+    if (!streams)
+      return PVR_ERROR_UNKNOWN;
+
+    const unsigned int channelUid = tag.GetUniqueChannelId();
+    const time_t startTime = tag.GetStartTime();
+    const time_t endTime = tag.GetEndTime();
+
+    // Find the stream for this channel
+    for (const auto& stream : *streams)
+    {
+      if (static_cast<unsigned int>(stream.id) == channelUid)
+      {
+        if (!stream.tvArchive)
+          return PVR_ERROR_UNKNOWN;
+
+        // Build catchup URL
+        const std::string url = xtream::BuildCatchupUrl(settings, stream.id, startTime, endTime, streamFormat);
+        if (url.empty())
+          return PVR_ERROR_UNKNOWN;
+
+        properties.emplace_back(PVR_STREAM_PROPERTY_STREAMURL, url);
+        properties.emplace_back(PVR_STREAM_PROPERTY_ISREALTIMESTREAM, "true");
+        properties.emplace_back(PVR_STREAM_PROPERTY_EPGPLAYBACKASLIVE, "true");
+        return PVR_ERROR_NO_ERROR;
+      }
+    }
+
+    return PVR_ERROR_UNKNOWN;
+  }
+
 private:
   struct GroupMember
   {
@@ -1243,6 +1332,7 @@ private:
           m_uidToStreamId = std::make_shared<UidToStreamMap>(std::move(uidToStreamId));
           m_groupMembers = std::make_shared<GroupMembersMap>(std::move(groupMembers));
           m_groupNamesOrdered = std::make_shared<std::vector<std::string>>(std::move(groupNamesOrdered));
+          m_streams = std::make_shared<std::vector<xtream::LiveStream>>(streams);
 
           m_xtreamSettings = settings;
           m_streamFormat = streamFormat;
@@ -1495,6 +1585,7 @@ private:
   std::shared_ptr<const std::vector<std::string>> m_groupNamesOrdered;
   std::shared_ptr<const GroupMembersMap> m_groupMembers;
   std::shared_ptr<const std::vector<xtream::ChannelEpg>> m_epgData;
+  std::shared_ptr<const std::vector<xtream::LiveStream>> m_streams;
 
   std::string m_cacheSignatureAttempted;
 

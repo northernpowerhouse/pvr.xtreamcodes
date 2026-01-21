@@ -521,6 +521,66 @@ bool ExtractIntField(std::string_view obj, const std::string& key, int& out)
   return ParseIntAt(obj, pos + 1, out);
 }
 
+bool ExtractBoolField(std::string_view obj, const std::string& key, bool& out)
+{
+  size_t pos = 0;
+  if (!FindKeyPos(obj, key, pos))
+    return false;
+  pos = obj.find(':', pos);
+  if (pos == std::string::npos)
+    return false;
+  ++pos;
+  while (pos < obj.size() && std::isspace(static_cast<unsigned char>(obj[pos])))
+    ++pos;
+  if (pos >= obj.size())
+    return false;
+
+  // Check for boolean literals
+  if (obj.substr(pos, 4) == "true")
+  {
+    out = true;
+    return true;
+  }
+  if (obj.substr(pos, 5) == "false")
+  {
+    out = false;
+    return true;
+  }
+
+  // Check for numeric representation (1 = true, 0 = false)
+  if (obj[pos] == '1')
+  {
+    out = true;
+    return true;
+  }
+  if (obj[pos] == '0')
+  {
+    out = false;
+    return true;
+  }
+
+  // Check for string representation
+  if (obj[pos] == '"')
+  {
+    ++pos;
+    if (pos < obj.size())
+    {
+      if (obj[pos] == '1')
+      {
+        out = true;
+        return true;
+      }
+      if (obj[pos] == '0')
+      {
+        out = false;
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 bool ExtractStringField(std::string_view obj, const std::string& key, std::string& out)
 {
   size_t pos = 0;
@@ -842,6 +902,8 @@ FetchResult FetchLiveStreams(const Settings& settings, int categoryId, std::vect
         ExtractStringField(obj, "name", s.name);
         ExtractStringField(obj, "stream_icon", s.icon);
         ExtractStringField(obj, "epg_channel_id", s.epgChannelId);
+        ExtractBoolField(obj, "tv_archive", s.tvArchive);
+        ExtractIntField(obj, "tv_archive_duration", s.tvArchiveDuration);
         out.push_back(std::move(s));
       }))
     return {false, "Streams response was not a JSON array"};
@@ -903,6 +965,38 @@ std::string BuildLiveStreamUrl(const Settings& settings, int streamId, const std
 
   std::string url = base + "/live/" + UrlEncode(settings.username) + "/" +
                     UrlEncode(settings.password) + "/" + std::to_string(streamId) + ext;
+  return url;
+}
+
+std::string BuildCatchupUrl(const Settings& settings, int streamId, time_t startTime, time_t endTime, const std::string& streamFormat)
+{
+  const std::string base = BuildBaseUrl(settings);
+  if (base.empty() || streamId <= 0 || startTime <= 0 || endTime <= startTime)
+    return {};
+
+  // Calculate duration in minutes
+  const int durationMinutes = static_cast<int>((endTime - startTime) / 60);
+  if (durationMinutes <= 0)
+    return {};
+
+  // Format start time as YYYY-MM-DD:HH-MM
+  std::tm* tm = std::gmtime(&startTime);
+  if (!tm)
+    return {};
+
+  char timeBuffer[32];
+  std::snprintf(timeBuffer, sizeof(timeBuffer), "%04d-%02d-%02d:%02d-%02d",
+                tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
+                tm->tm_hour, tm->tm_min);
+
+  std::string ext = ".ts";
+  if (ToLower(streamFormat) == "hls")
+    ext = ".m3u8";
+
+  // Format: server:port/timeshift/user/pass/durationinminutes/YYYY-MM-DD:HH-MM/streamid.ts
+  std::string url = base + "/timeshift/" + UrlEncode(settings.username) + "/" +
+                    UrlEncode(settings.password) + "/" + std::to_string(durationMinutes) + "/" +
+                    std::string(timeBuffer) + "/" + std::to_string(streamId) + ext;
   return url;
 }
 

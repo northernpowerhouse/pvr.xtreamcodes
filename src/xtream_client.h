@@ -87,6 +87,7 @@ FetchResult FetchAllLiveStreams(const Settings& settings,
                                 std::vector<LiveStream>& streams);
 
 std::string BuildLiveStreamUrl(const Settings& settings, int streamId, const std::string& streamFormat);
+std::string BuildCatchupUrl(const Settings& settings, int streamId, time_t startTime, time_t endTime, const std::string& streamFormat);
 
 // EPG/XMLTV functions
 FetchResult FetchXMLTVEpg(const Settings& settings, std::string& xmltvData);

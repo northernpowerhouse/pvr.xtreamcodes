@@ -2,7 +2,7 @@
   "project": "pvr.xtreamcodes - EPG and Catchup Enhancement",
   "version": "1.0.0",
   "lastUpdated": "2026-01-21",
-  "status": "planning",
+  "status": "in-progress",
   "researchSource": "kodi-pvr/pvr.iptvsimple",
   
   "researchFindings": {
@@ -195,44 +195,44 @@
         {
           "id": "catchup-4",
           "description": "Research Xtream Codes catchup URL format",
-          "status": "not-started",
+          "status": "completed",
           "files": [],
-          "notes": "Determine exact URL pattern for catchup streams: http://domain/timeshift/username/password/duration/start_timestamp/stream_id.ts or .m3u8"
+          "notes": "URL format: server:port/timeshift/user/pass/durationinminutes/YYYY-MM-DD:HH-MM/streamid.ts"
         }
       ]
     },
     {
       "phase": 3,
       "name": "Catchup Playback Implementation",
-      "status": "not-started",
+      "status": "completed",
       "tasks": [
         {
           "id": "playback-1",
           "description": "Implement IsEPGTagPlayable() callback",
-          "status": "not-started",
+          "status": "completed",
           "files": ["src/addon.cpp"],
-          "notes": "Check if channel has tv_archive and EPG tag is within catchup window"
+          "notes": "Checks channel tvArchive flag, archive duration window, and whether program is in the past"
         },
         {
           "id": "playback-2",
           "description": "Implement GetEPGTagStreamProperties() callback",
-          "status": "not-started",
+          "status": "completed",
           "files": ["src/addon.cpp"],
-          "notes": "Build catchup URL, set stream properties for playback"
+          "notes": "Builds catchup URL using BuildCatchupUrl, sets timeshift stream properties"
         },
         {
           "id": "playback-3",
           "description": "Add BuildCatchupStreamUrl() to xtream_client",
-          "status": "not-started",
+          "status": "completed",
           "files": ["src/xtream_client.cpp", "src/xtream_client.h"],
-          "notes": "Generate catchup URL from stream ID, start time, duration"
+          "notes": "Implemented as BuildCatchupUrl - generates timeshift URL with duration in minutes and formatted datetime"
         },
         {
           "id": "playback-4",
           "description": "Implement catchup time window validation",
-          "status": "not-started",
+          "status": "completed",
           "files": ["src/addon.cpp"],
-          "notes": "Ensure requested time is within tv_archive_duration hours from now"
+          "notes": "IsEPGTagPlayable validates program end time is within tv_archive_duration hours from current time"
         },
         {
           "id": "playback-5",
@@ -244,9 +244,9 @@
         {
           "id": "playback-6",
           "description": "Set appropriate stream properties for timeshift playback",
-          "status": "not-started",
+          "status": "completed",
           "files": ["src/addon.cpp"],
-          "notes": "PVR_STREAM_PROPERTY_ISREALTIMESTREAM, PVR_STREAM_PROPERTY_EPGPLAYBACKASLIVE"
+          "notes": "Sets STREAMURL, ISREALTIMESTREAM=true, EPGPLAYBACKASLIVE=true for timeshift-style playback"
         }
       ]
     },

@@ -94,17 +94,20 @@ else()
     add_library(${ADDON_ID} SHARED
       src/addon.cpp
       src/xtream_client.cpp
+      src/pugixml/pugixml.cpp
       src/win_locale_anchor.cpp
     )
   else()
     add_library(${ADDON_ID} MODULE
       src/addon.cpp
       src/xtream_client.cpp
+      src/pugixml/pugixml.cpp
     )
   endif()
 
   target_include_directories(${ADDON_ID} PRIVATE
     "${KODI_ADDON_SDK}/include"
+    "${CMAKE_SOURCE_DIR}/src/pugixml"
   )
 
   set_target_properties(${ADDON_ID} PROPERTIES PREFIX "")

@@ -108,3 +108,7 @@ msgstr "Catchup start time offset (hours)"
 msgctxt "#30404"
 msgid "{0:d} hours"
 msgstr "{0:d} hours"
+
+msgctxt "#30405"
+msgid "Enable play from start for ongoing programs"
+msgstr "Enable play from start for ongoing programs"

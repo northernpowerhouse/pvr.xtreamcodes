@@ -810,6 +810,7 @@ Settings LoadSettings()
   kodi::addon::GetSettingInt("catchup_start_offset_hours", s.catchupStartOffsetHours);
   kodi::addon::GetSettingBoolean("enable_user_agent_spoofing", s.enableUserAgentSpoofing);
   kodi::addon::GetSettingString("custom_user_agent", s.customUserAgent);
+  kodi::addon::GetSettingBoolean("enable_play_from_start", s.enablePlayFromStart);
 
   // Kodi sometimes doesn't transfer settings to binary addons early during startup.
   // Always read persisted settings.xml from addon_data and overlay any values found.
@@ -830,6 +831,7 @@ Settings LoadSettings()
       ExtractSettingBool(xml, "enable_user_agent_spoofing", s.enableUserAgentSpoofing);
       if (ExtractSettingValue(xml, "custom_user_agent", tmp))
         s.customUserAgent = tmp;
+      ExtractSettingBool(xml, "enable_play_from_start", s.enablePlayFromStart);
     }
   }
   return s;

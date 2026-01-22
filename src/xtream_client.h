@@ -19,6 +19,7 @@ struct Settings
   std::string customUserAgent;
   
   int catchupStartOffsetHours = 0;
+  bool enablePlayFromStart = true;
 };
 
 struct TestResult

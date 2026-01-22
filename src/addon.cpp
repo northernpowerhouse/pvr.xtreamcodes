@@ -705,20 +705,31 @@ public:
               tag.GetUniqueChannelId(), tag.GetStartTime(), tag.GetEndTime());
 
     std::shared_ptr<const std::vector<xtream::LiveStream>> streams;
+    xtream::Settings settings;
     {
       std::lock_guard<std::mutex> lock(m_mutex);
       streams = m_streams;
+      settings = m_xtreamSettings;
     }
 
     if (!streams)
       return PVR_ERROR_NO_ERROR;
 
     const unsigned int channelUid = tag.GetUniqueChannelId();
+    const time_t startTime = tag.GetStartTime();
     const time_t endTime = tag.GetEndTime();
     const time_t now = std::time(nullptr);
 
-    // Only past programs can be played via catchup
-    if (endTime >= now)
+    // Check if program is in the past or currently airing
+    const bool isPast = endTime < now;
+    const bool isOngoing = startTime <= now && now < endTime;
+    
+    // Future programs cannot be played
+    if (startTime > now)
+      return PVR_ERROR_NO_ERROR;
+    
+    // Only allow ongoing programs if play-from-start is enabled
+    if (isOngoing && !settings.enablePlayFromStart)
       return PVR_ERROR_NO_ERROR;
 
     // Find the stream for this channel

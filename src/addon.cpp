@@ -758,6 +758,48 @@ public:
     return PVR_ERROR_NO_ERROR;
   }
 
+  bool CanSeekStream() override
+  {
+    // Catchup streams support seeking via HTTP range requests
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return !m_pendingCatchupByChannel.empty();
+  }
+
+  bool IsRealTimeStream() override
+  {
+    // When playing catchup, this is NOT a realtime stream
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_pendingCatchupByChannel.empty();
+  }
+
+  PVR_ERROR GetStreamTimes(kodi::addon::PVRStreamTimes& times) override
+  {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    
+    // Find the active catchup stream (should only be one)
+    for (const auto& pair : m_pendingCatchupByChannel)
+    {
+      const PendingCatchup& catchup = pair.second;
+      if (catchup.programStart > 0 && catchup.programEnd > catchup.programStart)
+      {
+        // Set timing information for seeking
+        times.SetStartTime(catchup.programStart);
+        times.SetPTSStart(0); // Start at beginning
+        times.SetPTSBegin(0); // Can seek to beginning
+        
+        // Duration in microseconds
+        const int64_t durationSec = catchup.programEnd - catchup.programStart;
+        times.SetPTSEnd(durationSec * 1000000LL); // Convert to microseconds
+        
+        kodi::Log(ADDON_LOG_DEBUG, "GetStreamTimes: start=%ld, end=%ld, duration=%lld sec",
+                  catchup.programStart, catchup.programEnd, durationSec);
+        return PVR_ERROR_NO_ERROR;
+      }
+    }
+    
+    return PVR_ERROR_NOT_IMPLEMENTED;
+  }
+
   PVR_ERROR GetEPGTagStreamProperties(const kodi::addon::PVREPGTag& tag,
                                      std::vector<kodi::addon::PVRStreamProperty>& properties) override
   {
@@ -810,7 +852,7 @@ public:
           const auto now = std::chrono::steady_clock::now();
           const int64_t nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
           std::lock_guard<std::mutex> lock(m_mutex);
-          m_pendingCatchupByChannel[channelUid] = PendingCatchup{url, nowMs + 30000};
+          m_pendingCatchupByChannel[channelUid] = PendingCatchup{url, nowMs + 30000, startTime, endTime};
         }
         kodi::Log(ADDON_LOG_INFO, "GetEPGTagStreamProperties: stored catchup URL for channel %u", channelUid);
         
@@ -1673,6 +1715,8 @@ private:
   {
     std::string url;
     int64_t expiresAtMs = 0;
+    time_t programStart = 0;
+    time_t programEnd = 0;
   };
   std::unordered_map<unsigned int, PendingCatchup> m_pendingCatchupByChannel;
 

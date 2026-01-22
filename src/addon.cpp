@@ -587,8 +587,8 @@ public:
     {
       kodi::Log(ADDON_LOG_INFO, "GetChannelStreamProperties: using CATCHUP URL = %s", pendingCatchupUrl.c_str());
       properties.emplace_back(PVR_STREAM_PROPERTY_STREAMURL, pendingCatchupUrl);
-      properties.emplace_back(PVR_STREAM_PROPERTY_ISREALTIMESTREAM, "true");
-      properties.emplace_back(PVR_STREAM_PROPERTY_EPGPLAYBACKASLIVE, "true");
+      properties.emplace_back(PVR_STREAM_PROPERTY_ISREALTIMESTREAM, "false");
+      properties.emplace_back(PVR_STREAM_PROPERTY_EPGPLAYBACKASLIVE, "false");
       return PVR_ERROR_NO_ERROR;
     }
 
@@ -788,8 +788,8 @@ public:
         
         properties.emplace_back(PVR_STREAM_PROPERTY_STREAMURL, url);
         kodi::Log(ADDON_LOG_INFO, "GetEPGTagStreamProperties: added STREAMURL property");
-        properties.emplace_back(PVR_STREAM_PROPERTY_ISREALTIMESTREAM, "true");
-        properties.emplace_back(PVR_STREAM_PROPERTY_EPGPLAYBACKASLIVE, "true");
+        properties.emplace_back(PVR_STREAM_PROPERTY_ISREALTIMESTREAM, "false");
+        properties.emplace_back(PVR_STREAM_PROPERTY_EPGPLAYBACKASLIVE, "false");
         kodi::Log(ADDON_LOG_INFO, "GetEPGTagStreamProperties: returning SUCCESS with %d properties", (int)properties.size());
         return PVR_ERROR_NO_ERROR;
       }

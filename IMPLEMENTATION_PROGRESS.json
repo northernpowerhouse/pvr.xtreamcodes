@@ -1,7 +1,7 @@
 {
   "project": "pvr.xtreamcodes - EPG and Catchup Enhancement",
   "version": "1.0.0",
-  "lastUpdated": "2026-01-21",
+  "lastUpdated": "2026-01-22",
   "status": "in-progress",
   "researchSource": "kodi-pvr/pvr.iptvsimple",
   
@@ -127,7 +127,7 @@
           "description": "Implement ParseXMLTV() to parse XMLTV format using pugixml",
           "status": "completed",
           "files": ["src/xtream_client.cpp"],
-          "notes": "Implemented XMLTV parsing with pugixml, matches channels by ID/name, parses programme data"
+          "notes": "Implemented XMLTV parsing with pugixml, matches channels by ID/name, parses programme data. Fixed timezone parsing to use timegm() and properly handle timezone offsets (e.g., +0100)"
         },
         {
           "id": "epg-6",
@@ -163,13 +163,20 @@
           "status": "not-started",
           "files": ["pvr.xtreamcodes/resources/settings.xml"],
           "notes": "Optional: allow users to disable EPG if not needed"
+        },
+        {
+          "id": "epg-11",
+          "description": "Fix XMLTV timezone parsing for accurate EPG times",
+          "status": "completed",
+          "files": ["src/xtream_client.cpp"],
+          "notes": "Changed from mktime() to timegm() with proper timezone offset adjustment. Parses timezone from XMLTV timestamps (e.g., '20260121200000 +0100') and converts correctly to UTC"
         }
       ]
     },
     {
       "phase": 2,
       "name": "Catchup Detection",
-      "status": "not-started",
+      "status": "completed",
       "tasks": [
         {
           "id": "catchup-1",
@@ -181,16 +188,16 @@
         {
           "id": "catchup-2",
           "description": "Parse tv_archive fields from get_live_streams JSON response",
-          "status": "not-started",
+          "status": "completed",
           "files": ["src/xtream_client.cpp"],
-          "notes": "Use ExtractBoolField and ExtractIntField similar to existing parsing"
+          "notes": "Using ExtractBoolField and ExtractIntField to parse tv_archive and tv_archive_duration from API response"
         },
         {
           "id": "catchup-3",
           "description": "Store catchup info with channel data",
-          "status": "not-started",
+          "status": "completed",
           "files": ["src/addon.cpp"],
-          "notes": "Track which channels support catchup in channel data structure"
+          "notes": "Catchup info (tvArchive, tvArchiveDuration) stored in m_streams shared_ptr for thread-safe access"
         },
         {
           "id": "catchup-4",
@@ -225,7 +232,7 @@
           "description": "Add BuildCatchupStreamUrl() to xtream_client",
           "status": "completed",
           "files": ["src/xtream_client.cpp", "src/xtream_client.h"],
-          "notes": "Implemented as BuildCatchupUrl - generates timeshift URL with duration in minutes and formatted datetime"
+          "notes": "Implemented as BuildCatchupUrl - generates timeshift URL with duration in minutes and formatted datetime. Uses gmtime_r() for thread safety. Converts UTC timestamps to XMLTV timezone (currently hardcoded +1 hour for CET) since Xtream server expects local timezone times"
         },
         {
           "id": "playback-4",
@@ -261,6 +268,34 @@
           "status": "not-started",
           "files": ["src/addon.cpp"],
           "notes": "Implement seeking/scrubbing functionality for catchup playback to allow users to jump to specific positions within archived programs"
+        },
+        {
+          "id": "playback-9",
+          "description": "Add catchup start time offset setting",
+          "status": "completed",
+          "files": ["pvr.xtreamcodes/resources/settings.xml", "pvr.xtreamcodes/resources/language/resource.language.en_gb/strings.po", "src/xtream_client.h", "src/addon.cpp"],
+          "notes": "Added catchup_start_offset_hours setting (range -12 to +12 hours) to adjust catchup start times. Setting takes effect immediately without addon restart via SetSettingsOverride updating m_xtreamSettings"
+        },
+        {
+          "id": "playback-10",
+          "description": "Fix thread-safety in BuildCatchupUrl",
+          "status": "completed",
+          "files": ["src/xtream_client.cpp"],
+          "notes": "Changed gmtime() to gmtime_r() to prevent race conditions where static buffer could be overwritten by other threads, causing mixed program/current time in URLs"
+        },
+        {
+          "id": "playback-11",
+          "description": "Fix catchup URL timezone to match XMLTV timezone",
+          "status": "completed",
+          "files": ["src/xtream_client.cpp"],
+          "notes": "Xtream server expects times in XMLTV timezone (CET/UTC+1), not UTC. Added +1 hour conversion when formatting URLs. TODO: Parse and use actual XMLTV timezone offset instead of hardcoding"
+        },
+        {
+          "id": "playback-12",
+          "description": "Implement immediate settings updates",
+          "status": "completed",
+          "files": ["src/addon.cpp"],
+          "notes": "SetSettingsOverride now updates both m_settingsOverride and m_xtreamSettings so catchup offset and other settings take effect immediately on next playback without requiring addon restart"
         }
       ]
     },

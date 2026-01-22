@@ -185,6 +185,14 @@ std::string EffectiveUserAgent(const xtream::Settings& settings)
   return ua.empty() ? std::string(kDefaultAddonUserAgent) : ua;
 }
 
+std::string AppendUserAgentHeader(const std::string& url, const xtream::Settings& settings)
+{
+  const std::string ua = EffectiveUserAgent(settings);
+  if (ua.empty())
+    return url;
+  return url + "|User-Agent=" + UrlEncode(ua);
+}
+
 std::string RedactUrlCredentials(const std::string& url)
 {
   // Avoid logging usernames/passwords by default.
@@ -799,6 +807,7 @@ Settings LoadSettings()
   kodi::addon::GetSettingString("username", s.username);
   kodi::addon::GetSettingString("password", s.password);
   kodi::addon::GetSettingInt("timeout_seconds", s.timeoutSeconds);
+  kodi::addon::GetSettingInt("catchup_start_offset_hours", s.catchupStartOffsetHours);
   kodi::addon::GetSettingBoolean("enable_user_agent_spoofing", s.enableUserAgentSpoofing);
   kodi::addon::GetSettingString("custom_user_agent", s.customUserAgent);
 
@@ -817,6 +826,7 @@ Settings LoadSettings()
       if (ExtractSettingValue(xml, "password", tmp))
         s.password = tmp;
       ExtractSettingInt(xml, "timeout_seconds", s.timeoutSeconds);
+      ExtractSettingInt(xml, "catchup_start_offset_hours", s.catchupStartOffsetHours);
       ExtractSettingBool(xml, "enable_user_agent_spoofing", s.enableUserAgentSpoofing);
       if (ExtractSettingValue(xml, "custom_user_agent", tmp))
         s.customUserAgent = tmp;
@@ -965,7 +975,7 @@ std::string BuildLiveStreamUrl(const Settings& settings, int streamId, const std
 
   std::string url = base + "/live/" + UrlEncode(settings.username) + "/" +
                     UrlEncode(settings.password) + "/" + std::to_string(streamId) + ext;
-  return url;
+  return AppendUserAgentHeader(url, settings);
 }
 
 std::string BuildCatchupUrl(const Settings& settings, int streamId, time_t startTime, time_t endTime, const std::string& streamFormat)
@@ -1006,7 +1016,7 @@ std::string BuildCatchupUrl(const Settings& settings, int streamId, time_t start
   std::string url = base + "/timeshift/" + UrlEncode(settings.username) + "/" +
                     UrlEncode(settings.password) + "/" + std::to_string(durationMinutes) + "/" +
                     std::string(timeBuffer) + "/" + std::to_string(streamId) + ext;
-  return url;
+  return AppendUserAgentHeader(url, settings);
 }
 
 FetchResult FetchXMLTVEpg(const Settings& settings, std::string& xmltvData)

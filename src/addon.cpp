@@ -771,6 +771,9 @@ public:
     const unsigned int channelUid = tag.GetUniqueChannelId();
     const time_t startTime = tag.GetStartTime();
     const time_t endTime = tag.GetEndTime();
+    kodi::Log(ADDON_LOG_INFO,
+          "GetEPGTagStreamProperties: catchup offset hours=%d, start=%ld, end=%ld",
+          settings.catchupStartOffsetHours, startTime, endTime);
 
     // Find the stream for this channel
     for (const auto& stream : *streams)

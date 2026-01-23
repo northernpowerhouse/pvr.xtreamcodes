@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <settings version="1">
-  <section id="pvr.xtreamcodes">
+  <section id="pvr.dispatcharr">
     <category id="connection" label="30000" help="">
       <group id="1">
         <setting id="server" type="string" label="30001" help="">
@@ -41,6 +41,17 @@
           </constraints>
           <control type="edit" format="string" delayed="false">
             <heading>30004</heading>
+            <hidden>true</hidden>
+          </control>
+        </setting>
+        <setting id="dispatcharr_password" type="string" label="30006" help="">
+          <level>0</level>
+          <default/>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
+          <control type="edit" format="string" delayed="false">
+            <heading>30006</heading>
             <hidden>true</hidden>
           </control>
         </setting>

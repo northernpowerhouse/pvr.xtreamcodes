@@ -77,7 +77,7 @@ jobs:
         shell: bash
         run: |
           set -e
-          ADDON_DIR="dist/pvr.xtreamcodes"
+          ADDON_DIR="dist/pvr.dispatcharr"
           if [[ ! -d "$ADDON_DIR" ]]; then echo "Addon directory not found: $ADDON_DIR"; ls -lah dist || true; exit 1; fi
           SO_FILE=$(find "$ADDON_DIR" -name '*.so' -print -quit)
           if [[ -z "$SO_FILE" ]]; then echo "No .so found in $ADDON_DIR"; find "$ADDON_DIR" -maxdepth 2 -type f -print; exit 1; fi
@@ -91,7 +91,7 @@ jobs:
         shell: bash
         run: |
           set -e
-          ADDON_DIR="dist/pvr.xtreamcodes"
+          ADDON_DIR="dist/pvr.dispatcharr"
           if [[ ! -d "$ADDON_DIR" ]]; then echo "Addon directory not found: $ADDON_DIR"; ls -lah dist || true; exit 1; fi
           DLL_FILE=$(find "$ADDON_DIR" -name '*.dll' -print -quit)
           if [[ -z "$DLL_FILE" ]]; then echo "No .dll found in $ADDON_DIR"; find "$ADDON_DIR" -maxdepth 2 -type f -print; exit 1; fi
@@ -125,15 +125,15 @@ jobs:
             windows-*) PLAT=windows ;;
             *) PLAT="$MATRIX_OS" ;;
           esac
-          ZIP_NAME="pvr.xtreamcodes-${VERSION}-${PLAT}.zip"
-          (cd dist && zip -qr "$ZIP_NAME" pvr.xtreamcodes)
+          ZIP_NAME="pvr.dispatcharr-${VERSION}-${PLAT}.zip"
+          (cd dist && zip -qr "$ZIP_NAME" pvr.dispatcharr)
           echo "Created release ZIP: $ZIP_NAME"
           ls -lah dist/*.zip
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: pvr.xtreamcodes-${{ steps.version.outputs.version }}-${{ matrix.label }}
+          name: pvr.dispatcharr-${{ steps.version.outputs.version }}-${{ matrix.label }}
           path: dist/*
 
       - name: Publish GitHub Release asset
@@ -219,15 +219,15 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           set -e
-          ZIP_NAME="pvr.xtreamcodes-${VERSION}-android-${{ matrix.abi }}.zip"
-          (cd dist && zip -qr "$ZIP_NAME" pvr.xtreamcodes)
+          ZIP_NAME="pvr.dispatcharr-${VERSION}-android-${{ matrix.abi }}.zip"
+          (cd dist && zip -qr "$ZIP_NAME" pvr.dispatcharr)
           echo "Created release ZIP: $ZIP_NAME"
           ls -lah dist/*.zip
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: pvr.xtreamcodes-${{ steps.version.outputs.version }}-android-${{ matrix.abi }}
+          name: pvr.dispatcharr-${{ steps.version.outputs.version }}-android-${{ matrix.abi }}
           path: dist/*
 
       - name: Publish GitHub Release asset

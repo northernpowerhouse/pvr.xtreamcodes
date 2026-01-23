@@ -5,8 +5,8 @@ if(WIN32 AND MSVC)
   set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL" CACHE STRING "" FORCE)
 endif()
 
-set(ADDON_ID "pvr.xtreamcodes")
-set(ADDON_NAME "Xtream Codes PVR Client")
+set(ADDON_ID "pvr.dispatcharr")
+set(ADDON_NAME "Dispatcharr PVR Client")
 set(ADDON_VERSION "1.0.0")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR})
@@ -37,6 +37,7 @@ if(Kodi_FOUND)
   set(XTC_SOURCES
     src/addon.cpp
     src/xtream_client.cpp
+    src/dispatcharr_client.cpp
   )
   
   # Add bundled pugixml if not using system version

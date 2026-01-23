@@ -17,7 +17,7 @@
 
 namespace
 {
-constexpr const char* kDefaultAddonUserAgent = "XtreamCodesKodiAddon";
+constexpr const char* kDefaultAddonUserAgent = "DispatcharrKodiAddon";
 constexpr size_t kMaxHttpBodyBytes = 50 * 1024 * 1024; // cap responses to protect memory (XMLTV can be large)
 
 std::string Trim(std::string s)
@@ -353,7 +353,7 @@ HttpResult HttpGet(const std::string& url,
   HttpResult result;
 
   const std::string redacted = RedactUrlCredentials(url);
-  kodi::Log(ADDON_LOG_INFO, "pvr.xtreamcodes: HTTP GET %s", redacted.c_str());
+  kodi::Log(ADDON_LOG_INFO, "pvr.dispatcharr: HTTP GET %s", redacted.c_str());
 
   kodi::vfs::CFile file;
   file.CURLCreate(url);
@@ -377,7 +377,7 @@ HttpResult HttpGet(const std::string& url,
   result.protocol = file.GetPropertyValue(ADDON_FILE_PROPERTY_RESPONSE_PROTOCOL, "");
   if (!ReadAll(file, result.body, kMaxHttpBodyBytes))
   {
-    kodi::Log(ADDON_LOG_ERROR, "pvr.xtreamcodes: HTTP response exceeded %zu bytes for %s",
+    kodi::Log(ADDON_LOG_ERROR, "pvr.dispatcharr: HTTP response exceeded %zu bytes for %s",
               kMaxHttpBodyBytes, redacted.c_str());
     result.protocol = result.protocol.empty() ? std::string("Body too large") : result.protocol;
     return result;
@@ -806,6 +806,7 @@ Settings LoadSettings()
   kodi::addon::GetSettingInt("port", s.port);
   kodi::addon::GetSettingString("username", s.username);
   kodi::addon::GetSettingString("password", s.password);
+  kodi::addon::GetSettingString("dispatcharr_password", s.dispatcharrPassword);
   kodi::addon::GetSettingInt("timeout_seconds", s.timeoutSeconds);
   kodi::addon::GetSettingInt("catchup_start_offset_hours", s.catchupStartOffsetHours);
   kodi::addon::GetSettingBoolean("enable_user_agent_spoofing", s.enableUserAgentSpoofing);
@@ -817,7 +818,7 @@ Settings LoadSettings()
   // Always read persisted settings.xml from addon_data and overlay any values found.
   {
     std::string xml;
-    if (ReadVfsTextFile("special://profile/addon_data/pvr.xtreamcodes/settings.xml", xml))
+    if (ReadVfsTextFile("special://profile/addon_data/pvr.dispatcharr/settings.xml", xml))
     {
       std::string tmp;
       if (ExtractSettingValue(xml, "server", tmp))
@@ -827,6 +828,8 @@ Settings LoadSettings()
         s.username = tmp;
       if (ExtractSettingValue(xml, "password", tmp))
         s.password = tmp;
+      if (ExtractSettingValue(xml, "dispatcharr_password", tmp))
+        s.dispatcharrPassword = tmp;
       ExtractSettingInt(xml, "timeout_seconds", s.timeoutSeconds);
       ExtractSettingInt(xml, "catchup_start_offset_hours", s.catchupStartOffsetHours);
       ExtractSettingBool(xml, "enable_user_agent_spoofing", s.enableUserAgentSpoofing);
@@ -1099,7 +1102,7 @@ bool ParseXMLTV(const std::string& xmltvData,
   
   if (!result)
   {
-    kodi::Log(ADDON_LOG_ERROR, "pvr.xtreamcodes: Failed to parse XMLTV: %s (offset: %d)", 
+    kodi::Log(ADDON_LOG_ERROR, "pvr.dispatcharr: Failed to parse XMLTV: %s (offset: %d)", 
               result.description(), static_cast<int>(result.offset));
     return false;
   }
@@ -1107,7 +1110,7 @@ bool ParseXMLTV(const std::string& xmltvData,
   const auto& tvNode = doc.child("tv");
   if (!tvNode)
   {
-    kodi::Log(ADDON_LOG_ERROR, "pvr.xtreamcodes: XMLTV missing <tv> root element");
+    kodi::Log(ADDON_LOG_ERROR, "pvr.dispatcharr: XMLTV missing <tv> root element");
     return false;
   }
 
@@ -1231,7 +1234,7 @@ bool ParseXMLTV(const std::string& xmltvData,
   }
 
   kodi::Log(ADDON_LOG_INFO,
-            "pvr.xtreamcodes: XMLTV channel mapping: total=%d, epg_id=%d, numeric=%d, name=%d, unmapped=%d",
+            "pvr.dispatcharr: XMLTV channel mapping: total=%d, epg_id=%d, numeric=%d, name=%d, unmapped=%d",
             totalXmltvChannels, mappedByEpgId, mappedByNumericId, mappedByName, unmapped);
 
   // Second pass: Parse programme elements
@@ -1354,7 +1357,7 @@ bool ParseXMLTV(const std::string& xmltvData,
       channelEpgs.push_back(kv.second);
   }
 
-  kodi::Log(ADDON_LOG_INFO, "pvr.xtreamcodes: Parsed XMLTV - %d channels, %d programmes",
+  kodi::Log(ADDON_LOG_INFO, "pvr.dispatcharr: Parsed XMLTV - %d channels, %d programmes",
             static_cast<int>(channelEpgs.size()), programmeCount);
 
   return !channelEpgs.empty();

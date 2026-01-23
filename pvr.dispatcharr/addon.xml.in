@@ -12,8 +12,8 @@
     />
 
   <extension point="xbmc.addon.metadata">
-    <summary lang="en_GB">Xtream Codes PVR Client</summary>
-    <description lang="en_GB">Live TV PVR client for Xtream Codes IPTV servers.</description>
+    <summary lang="en_GB">Dispatcharr PVR Client</summary>
+    <description lang="en_GB">Live TV PVR client for Dispatcharr.</description>
     <license>GPL-2.0-or-later</license>
     <assets>
       <icon>icon.png</icon>

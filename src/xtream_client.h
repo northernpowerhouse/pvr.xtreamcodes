@@ -13,6 +13,7 @@ struct Settings
   int port = 80;
   std::string username;
   std::string password;
+  std::string dispatcharrPassword; // Separate password for API
   int timeoutSeconds = 30;
 
   bool enableUserAgentSpoofing = false;

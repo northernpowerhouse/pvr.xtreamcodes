@@ -1,5 +1,5 @@
 #!/bin/bash
-# Syntax check script for pvr.xtreamcodes
+# Syntax check script for pvr.dispatcharr
 # Performs basic C++ syntax validation before pushing to GitHub
 
 set -e
@@ -7,7 +7,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
-echo "🔍 Checking C++ syntax for pvr.xtreamcodes..."
+echo "🔍 Checking C++ syntax for pvr.dispatcharr..."
 echo ""
 
 # Check if we have the necessary tools

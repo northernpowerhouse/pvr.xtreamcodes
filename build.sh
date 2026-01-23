@@ -32,7 +32,7 @@ Custom Kodi addons folder:
 
 Notes:
   - KODI_ADDON_SDK must point to a folder containing: include/kodi/addon-instance/PVR.h
-  - Output addon package is written to: dist/pvr.xtreamcodes/
+  - Output addon package is written to: dist/pvr.dispatcharr/
   - Pass extra CMake args via CMAKE_EXTRA_ARGS (e.g., Android toolchain):
       CMAKE_EXTRA_ARGS="-DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK/build/cmake/android.toolchain.cmake -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=android-21"
 EOF
@@ -129,7 +129,7 @@ cmake --install "$BUILD_DIR"
 
 # Update addon.xml version if VERSION is set
 if [[ -n "$VERSION" ]]; then
-  ADDON_XML="$DIST_DIR/pvr.xtreamcodes/addon.xml"
+  ADDON_XML="$DIST_DIR/pvr.dispatcharr/addon.xml"
   if [[ -f "$ADDON_XML" ]]; then
     # Strip 'v' prefix if present
     VERSION="${VERSION#v}"
@@ -142,13 +142,13 @@ if [[ -n "$VERSION" ]]; then
   fi
 fi
 
-echo "OK: Built addon package at: $DIST_DIR/pvr.xtreamcodes"
+echo "OK: Built addon package at: $DIST_DIR/pvr.dispatcharr"
 
 # Package as installable Kodi ZIP
 if [[ "$SKIP_ZIP" == true ]]; then
   echo "Skipping ZIP creation (--skip-zip flag set)"
 else
-  ADDON_SRC_DIR="$DIST_DIR/pvr.xtreamcodes"
+  ADDON_SRC_DIR="$DIST_DIR/pvr.dispatcharr"
   if [[ -d "$ADDON_SRC_DIR" ]]; then
   # Determine version from installed addon.xml
   ADDON_XML="$ADDON_SRC_DIR/addon.xml"
@@ -165,8 +165,8 @@ else
     ADDON_VERSION=$(sed -n 's/.*set(ADDON_VERSION[[:space:]]*"\([^"]*\)").*/\1/p' "$ROOT_DIR/CMakeLists.txt" | head -n1 || true)
   fi
 
-  # Name: pvr.xtreamcodes-<version>[-platform].zip
-  ZIP_NAME="pvr.xtreamcodes"
+  # Name: pvr.dispatcharr-<version>[-platform].zip
+  ZIP_NAME="pvr.dispatcharr"
   if [[ -n "$ADDON_VERSION" ]]; then
     ZIP_NAME+="-$ADDON_VERSION"
   fi
@@ -175,17 +175,17 @@ else
   fi
   ZIP_NAME+=".zip"
 
-  # Create zip with top-level folder 'pvr.xtreamcodes'
+  # Create zip with top-level folder 'pvr.dispatcharr'
   if [[ -z "${ADDON_VERSION:-}" ]]; then
     echo "WARN: Could not determine addon version; ZIP will not include version."
   fi
   echo "Packaging addon version: ${ADDON_VERSION:-unknown} -> $ZIP_NAME"
   if command -v zip >/dev/null 2>&1; then
-    (cd "$DIST_DIR" && rm -f "$ZIP_NAME" && zip -qr "$ZIP_NAME" "pvr.xtreamcodes")
+    (cd "$DIST_DIR" && rm -f "$ZIP_NAME" && zip -qr "$ZIP_NAME" "pvr.dispatcharr")
   else
     # Fallback: use Python's zipfile (available on all GitHub runners)
     PYCODE='import os, sys, zipfile;\n'\
-"zip_path=os.path.join(sys.argv[1], sys.argv[2]); root=os.path.join(sys.argv[1], 'pvr.xtreamcodes');\n"\
+"zip_path=os.path.join(sys.argv[1], sys.argv[2]); root=os.path.join(sys.argv[1], 'pvr.dispatcharr');\n"\
 "zf=zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED);\n"\
 "plen=len(os.path.dirname(root))+1;\n"\
 "for base,_,files in os.walk(root):\n"\
@@ -199,8 +199,8 @@ else
 fi
 
 if [[ "$INSTALL_TO_KODI" == true ]]; then
-  SRC_DIR="$DIST_DIR/pvr.xtreamcodes"
-  DST_DIR="$KODI_ADDONS_DIR/pvr.xtreamcodes"
+  SRC_DIR="$DIST_DIR/pvr.dispatcharr"
+  DST_DIR="$KODI_ADDONS_DIR/pvr.dispatcharr"
 
   if [[ ! -d "$SRC_DIR" ]]; then
     echo "ERROR: Built addon package not found at: $SRC_DIR"

@@ -988,8 +988,14 @@ std::string BuildCatchupUrl(const Settings& settings, int streamId, time_t start
   if (base.empty() || streamId <= 0 || startTime <= 0 || endTime <= startTime)
     return {};
 
-  // Apply catchup start offset (convert hours to seconds)
-  time_t adjustedStartTime = startTime + (settings.catchupStartOffsetHours * 3600);
+  // Apply catchup start offset (convert hours to seconds; clamp negative to 0)
+  int offsetHours = settings.catchupStartOffsetHours;
+  if (offsetHours < 0)
+  {
+    kodi::Log(ADDON_LOG_WARNING, "BuildCatchupUrl: negative catchupStartOffsetHours=%d; clamping to 0", offsetHours);
+    offsetHours = 0;
+  }
+  time_t adjustedStartTime = startTime + (offsetHours * 3600);
   
   // Calculate duration in minutes
   const int durationMinutes = static_cast<int>((endTime - adjustedStartTime) / 60);

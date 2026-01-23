@@ -562,12 +562,14 @@ public:
     EnsureLoaded();
 
     std::shared_ptr<const UidToStreamMap> uidToStream;
+    std::shared_ptr<const std::vector<xtream::LiveStream>> streams;
     xtream::Settings settings;
     std::string streamFormat;
     std::string pendingCatchupUrl;
     {
       std::lock_guard<std::mutex> lock(m_mutex);
       uidToStream = m_uidToStreamId;
+      streams = m_streams;
       settings = m_xtreamSettings;
       streamFormat = m_streamFormat;
       // Check if there's a pending catchup URL for this channel
@@ -615,6 +617,72 @@ public:
       return PVR_ERROR_UNKNOWN;
 
     kodi::Log(ADDON_LOG_DEBUG, "GetChannelStreamProperties: using LIVE URL = %s", url.c_str());
+    
+    // Optionally use inputstream.ffmpegdirect for live streams
+    if (settings.useFFmpegDirect)
+    {
+      // Check if this channel has catchup support for backward seeking
+      const xtream::LiveStream* channelStream = nullptr;
+      if (streams)
+      {
+        for (const auto& stream : *streams)
+        {
+          if (stream.id == streamId)
+          {
+            channelStream = &stream;
+            break;
+          }
+        }
+      }
+      
+      properties.emplace_back(PVR_STREAM_PROPERTY_INPUTSTREAM, "inputstream.ffmpegdirect");
+      
+      // If channel has catchup support, provide catchup template for backward seeking
+      if (channelStream && channelStream->tvArchive && channelStream->tvArchiveDuration > 0)
+      {
+        // Calculate catchup offset
+        int offsetHours = settings.catchupStartOffsetHours;
+        if (offsetHours < 0)
+          offsetHours = 0;
+        const time_t nowTs = std::time(nullptr);
+        const time_t offsetSeconds = offsetHours * 3600;
+        const time_t archiveStart = nowTs - (channelStream->tvArchiveDuration * 3600) + offsetSeconds;
+        const time_t archiveEnd = nowTs;
+        
+        // Calculate duration for catchup window
+        const int archiveDurationMinutes = static_cast<int>((archiveEnd - archiveStart) / 60);
+        
+        // Build catchup URL template for seeking backwards
+        const std::string catchupTemplate = xtream::BuildCatchupUrlTemplate(
+            settings, streamId, archiveDurationMinutes, streamFormat);
+        
+        if (!catchupTemplate.empty())
+        {
+          properties.emplace_back("inputstream.ffmpegdirect.stream_mode", "timeshift");
+          properties.emplace_back("inputstream.ffmpegdirect.default_url", url);
+          properties.emplace_back("inputstream.ffmpegdirect.catchup_url_format_string", catchupTemplate);
+          properties.emplace_back("inputstream.ffmpegdirect.catchup_buffer_start_time", std::to_string(archiveStart));
+          properties.emplace_back("inputstream.ffmpegdirect.catchup_buffer_end_time", std::to_string(archiveEnd));
+          properties.emplace_back("inputstream.ffmpegdirect.catchup_terminates", "true");
+          properties.emplace_back("inputstream.ffmpegdirect.timezone_shift", "0");
+          kodi::Log(ADDON_LOG_INFO, "GetChannelStreamProperties: using live stream with catchup backward seeking");
+        }
+        else
+        {
+          properties.emplace_back("inputstream.ffmpegdirect.stream_mode", "default");
+          properties.emplace_back("inputstream.ffmpegdirect.is_realtime_stream", "true");
+          kodi::Log(ADDON_LOG_INFO, "GetChannelStreamProperties: using live stream without catchup (template empty)");
+        }
+      }
+      else
+      {
+        // No catchup support, use default live mode
+        properties.emplace_back("inputstream.ffmpegdirect.stream_mode", "default");
+        properties.emplace_back("inputstream.ffmpegdirect.is_realtime_stream", "true");
+        kodi::Log(ADDON_LOG_INFO, "GetChannelStreamProperties: using live stream without catchup support");
+      }
+    }
+    
     properties.emplace_back(PVR_STREAM_PROPERTY_STREAMURL, url);
     properties.emplace_back(PVR_STREAM_PROPERTY_ISREALTIMESTREAM, "true");
     properties.emplace_back(PVR_STREAM_PROPERTY_MIMETYPE, streamMimeType);
